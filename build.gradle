@@ -1,0 +1,45 @@
+buildscript {
+	repositories {
+		maven {
+			url 'http://repo1.maven.org/maven2/'
+		}
+	}
+	dependencies {
+		classpath 'com.liferay:com.liferay.gradle.plugins:3.4.24'
+	}
+}
+
+repositories {
+	maven {
+		url 'http://repo1.maven.org/maven2/'
+	}
+}
+
+apply plugin: 'com.liferay.plugin'
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+group = 'be.hyperverse'
+version = '1.0.0-SNAPSHOT'
+
+jar.archiveName = "${jar.baseName}.${jar.extension}"
+
+sourceSets {
+	test.compileClasspath += configurations.compileOnly
+	test.runtimeClasspath += configurations.compileOnly
+}
+
+dependencies {
+	compileOnly group: 'org.osgi', name: 'osgi.cmpn', version: '6.0.0'
+	compileOnly group: 'org.osgi', name: 'org.osgi.core', version: '6.0.0'
+	
+	compileOnly('com.liferay.portal:com.liferay.portal.kernel:2.43.0')
+}
+
+task 'deployToLiferay-local'(type: Copy){
+	dependsOn build
+	from(file('build/libs/liferay-dowab.jar'))
+	into('C:/liferay-dxp-digital-enterprise-7.0-sp3/deploy')
+}
