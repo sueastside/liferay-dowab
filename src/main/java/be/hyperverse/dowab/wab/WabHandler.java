@@ -22,31 +22,31 @@ import be.hyperverse.dowab.war.WarHandler;
 
 public class WabHandler {
 	private static final Log log = LogFactoryUtil.getLog(WarHandler.class);
-	
+
 	private final BundleContext bc;
-	
+
 	public WabHandler(final BundleContext bc) {
 		this.bc = bc;
 	}
 
-	public void processFile(File file) {
+	public void processFile(final File file) {
 		try {
 			String symbolicName = BundleUtils.getSymbolicName(file);
 			URL artifactPath = createBundleLocation(file.getAbsolutePath(), symbolicName);
 
-			Optional<Bundle> bundle = Arrays.asList(bc.getBundles()).stream().filter(b -> b.getSymbolicName().equals(symbolicName)).findFirst();
+			Optional<Bundle> bundle = Arrays.stream(bc.getBundles()).filter(b -> b.getSymbolicName().equals(symbolicName)).findFirst();
 			try (FileInputStream fileStream = new FileInputStream(file)) {
 				if (bundle.isPresent()) {
-					log.info("Updating: "+bundle);
+					log.info("Updating: " + bundle);
 					bundle.get().update(fileStream);
 				} else {
-					log.info("Installing: "+bundle);
+					log.info("Installing: " + bundle);
 					Bundle b = bc.installBundle(artifactPath.toString(), new FileInputStream(file));
 					BundleStartLevel bundleStartLevel = b.adapt(BundleStartLevel.class);
 					bundleStartLevel.setStartLevel(1);
 					b.start();
 				}
-				log.info("Processed: "+file.getName());
+				log.info("Processed: " + file.getName());
 			} catch (IOException e) {
 				log.warn(e);
 			}
@@ -62,7 +62,7 @@ public class WabHandler {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("file:"+path.replaceAll("\\\\", "/"));
+		sb.append("file:" + path.replaceAll("\\\\", "/"));
 		sb.append("?");
 		sb.append(Constants.BUNDLE_SYMBOLICNAME);
 		sb.append("=");

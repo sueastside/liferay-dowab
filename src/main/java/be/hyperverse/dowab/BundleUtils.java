@@ -6,9 +6,9 @@ import java.util.regex.Pattern;
 
 public class BundleUtils {
 	private static final Pattern PATTERN = Pattern.compile("(.*?)(-\\d+\\.\\d+\\.\\d+\\.\\d+)?");
-	
+
 	private BundleUtils() {}
-	
+
 	public static String getSymbolicName(final File f) {
 		String path = f.getAbsolutePath();
 
@@ -22,7 +22,7 @@ public class BundleUtils {
 		if (matcher.matches()) {
 			name = matcher.group(1);
 		}
-		
+
 		return name;
 	}
 }
