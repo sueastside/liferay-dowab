@@ -205,7 +205,7 @@ public class WarHandler {
 	 * @return
 	 */
 	private String sanitizeFilename(final String fileName) {
-		if (fileName.indexOf(1) == '/') {
+		if (fileName.startsWith("/")) {
 			return fileName.substring(1);
 		}
 
