@@ -25,16 +25,20 @@ import be.hyperverse.dowab.war.WarHandler;
 
 public class AutoDeployScanner extends Thread {
 	private static final Log log = LogFactoryUtil.getLog(AutoDeployScanner.class);
-	
+
+	private static final String TMPDIR = "java.io.tmpdir";
+	private static final String WAB_EXTENSION = ".wab";
+	private static final String WAR_EXTENSION = ".war";
+
 	private boolean started = true;
 	private final File deployDir;
-	
+
 	private WabHandler wabHandler;
 	private WarHandler warHandler;
-	
-	private final Map<String, Long> _blacklistFileTimestamps;
 
-	public AutoDeployScanner(final BundleContext bc, ThreadGroup threadGroup, String name, File deployDir) {
+	private final Map<String, Long> blacklistFileTimestamps;
+
+	public AutoDeployScanner(final BundleContext bc, final ThreadGroup threadGroup, final String name, final File deployDir) {
 		super(threadGroup, name);
 		this.deployDir = deployDir;
 
@@ -44,11 +48,11 @@ public class AutoDeployScanner extends Thread {
 
 		setDaemon(true);
 		setPriority(MIN_PRIORITY);
-		
+
 		wabHandler = new WabHandler(bc);
 		warHandler = new WarHandler(bc);
-		
-		_blacklistFileTimestamps = new HashMap<>();
+
+		blacklistFileTimestamps = new HashMap<>();
 	}
 
 	public void pause() {
@@ -61,6 +65,7 @@ public class AutoDeployScanner extends Thread {
 			try {
 				sleep(2);
 			} catch (InterruptedException ie) {
+				log.debug(ie.getMessage());
 			}
 
 			try {
@@ -95,7 +100,7 @@ public class AutoDeployScanner extends Thread {
 			return;
 		}
 		
-		Set<String> blacklistedFileNames = _blacklistFileTimestamps.keySet();
+		Set<String> blacklistedFileNames = blacklistFileTimestamps.keySet();
 
 		Iterator<String> iterator = blacklistedFileNames.iterator();
 
@@ -105,8 +110,7 @@ public class AutoDeployScanner extends Thread {
 			boolean blacklistedFileExists = false;
 
 			for (File file : files) {
-				if (StringUtil.equalsIgnoreCase(
-						blacklistedFileName, file.getName())) {
+				if (StringUtil.equalsIgnoreCase(blacklistedFileName, file.getName())) {
 
 					blacklistedFileExists = true;
 				}
@@ -122,35 +126,35 @@ public class AutoDeployScanner extends Thread {
 
 			fileName = StringUtil.toLowerCase(fileName);
 
-			if (file.isFile() && fileName.endsWith(".wab")) {
-				log.info("Processing " + file.getName()+" as wab");
+			if (file.isFile() && fileName.endsWith(WAB_EXTENSION)) {
+				log.info("Processing WAB file: " + file.getName());
 				handleFile(fileName, file, wabHandler::processFile);
-			} else if (file.isFile() && fileName.endsWith(".war")) {
-				log.info("Processing " + file.getName()+" as war");
+			} else if (file.isFile() && fileName.endsWith(WAR_EXTENSION)) {
+				log.info("Processing WAR file " + file.getName());
 				handleFile(fileName, file, warHandler::processFile);
 			}
 		}
 	}
-	
+
 	private void handleFile(String fileName, File file, Consumer<File> function) {
 		LocalDateTime start = LocalDateTime.now();
 		
-		if (_blacklistFileTimestamps.containsKey(file.getName()) &&
-			(_blacklistFileTimestamps.get(file.getName()) == file.lastModified())) {
+		if (blacklistFileTimestamps.containsKey(file.getName()) &&
+			(blacklistFileTimestamps.get(file.getName()) == file.lastModified())) {
 			return;
 		}
-		
-		Path tempFile = Paths.get(System.getProperty("java.io.tmpdir"), fileName);
+
+		Path tempFile = Paths.get(System.getProperty(TMPDIR), fileName);
 		try {
 			Files.move(Paths.get(file.getAbsolutePath()), tempFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-			_blacklistFileTimestamps.put(file.getName(), file.lastModified());
+			blacklistFileTimestamps.put(file.getName(), file.lastModified());
 			function.accept(tempFile.toFile());
 		} catch (IOException e) {
 			log.error(e);
 		}
-		
+
 		LocalDateTime end = LocalDateTime.now();
-		System.out.println(Duration.between(start, end).getSeconds());
-		System.out.println(Duration.between(start, end).toMinutes());
+		log.info("Duration in seconds: " + Duration.between(start, end).getSeconds() + " seconds");
+		log.info("Duration in minutes: " + Duration.between(start, end).toMinutes() + " minutes");
 	}
 }

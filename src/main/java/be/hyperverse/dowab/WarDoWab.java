@@ -16,28 +16,30 @@ import com.liferay.portal.kernel.util.PropsUtil;
 @Component(immediate = true)
 public class WarDoWab {
 	private static final Log log = LogFactoryUtil.getLog(WarDoWab.class);
-	
+
 	private static final String LIFERAY_HOME = PropsUtil.get(PropsKeys.LIFERAY_HOME)+File.separator;
 	private static final String PATH = "dowab";
 
 	private AutoDeployScanner autoDeployScanner;
-	
+
 	@Activate
 	public void activate(final BundleContext bc) {
 		log.info("activate");
+
 		Thread currentThread = Thread.currentThread();
-		autoDeployScanner = new AutoDeployScanner(bc,
-				currentThread.getThreadGroup(),
-				AutoDeployScanner.class.getName(), new File(LIFERAY_HOME+File.separator+PATH));
+		final File deployDir = new File(LIFERAY_HOME + File.separator + PATH);
+		autoDeployScanner = new AutoDeployScanner(bc, currentThread.getThreadGroup(), AutoDeployScanner.class.getName(), deployDir);
 		autoDeployScanner.start();
 
 		log.info("activated");
 	}
-	
+
 	@Deactivate
-	public void deactivate(final BundleContext bc) {
+	public void deactivate() {
 		log.info("deactivate");
+
 		autoDeployScanner.pause();
+
 		log.info("deactivated");
 	}
 }
